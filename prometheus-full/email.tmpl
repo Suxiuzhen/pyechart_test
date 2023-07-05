@@ -1,0 +1,34 @@
+{{ define "email.to.html" }}
+{{- if gt (len .Alerts.Firing) 0 -}}
+{{- range $index, $alert := .Alerts -}}
+========= <span style="color:red;font-size:36px;font-weight:bold;"> 监控告警 </span>=========
+<br>
+告警程序:  Alertmanager <br>
+告警类型:  {{ $alert.Labels.alertname }} <br>
+告警级别:  {{ $alert.Labels.severity }} 级 <br>
+告警状态:  {{ .Status }} <br>
+故障主机:  {{ $alert.Labels.instance }} {{ $alert.Labels.device }} <br>
+告警主题:  {{ .Annotations.summary }} <br>
+告警详情:  {{ $alert.Annotations.message }}{{ $alert.Annotations.description}} <br>
+主机标签:  {{ range .Labels.SortedPairs  }} <br> [{{ .Name }}: {{ .Value  | html }} ]{{ end }}<br>
+故障时间:  {{ ($alert.StartsAt.Add 28800e9).Format "2006-01-02 15:04:05" }}<br>
+{{- end }}
+{{- end }}
+========== end ===========
+{{- if gt (len .Alerts.Resolved) 0 -}}
+{{- range $index, $alert := .Alerts -}}
+========= <span style="color:#00FF00;font-size:24px;font-weight:bold;"> 告警恢复 </span>=========
+<br>
+告警程序: Alertmanager <br>
+告警类型: {{ $alert.Labels.alertname }} <br>
+告警级别: {{ $alert.Labels.severity }} 级 <br>
+告警状态: {{ .Status }} <br>
+故障主机: {{ $alert.Labels.instance }} {{ $alert.Labels.device }} <br>
+告警主题: {{ .Annotations.summary }} <br>
+告警详情: {{ $alert.Annotations.message }}{{ $alert.Annotations.description}} <br>
+主机标签: {{ range .Labels.SortedPairs  }} <br> [{{ .Name }}: {{ .Value  | html }} ]{{ end }}<br>
+故障时间: {{ ($alert.StartsAt.Add 28800e9).Format "2006-01-02 15:04:05" }}<br>
+{{- end }}
+{{- end }}
+========== end ===========
+{{- end }}

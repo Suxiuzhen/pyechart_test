@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+    node-exporter:
+        image: prom/node-exporter
+        container_name: node-exporter
+        hostname: node-exporter
+        restart: always
+        volumes:
+            - /proc:/host/proc:ro
+            - /sys:/host/sys:ro
+            - /:/rootfs:ro
+        ports:
+            - "9100:9100"
+

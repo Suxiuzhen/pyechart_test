@@ -1,0 +1,23 @@
+groups:
+  - name: Hosts.rules
+    rules:
+      - alert: HostDown
+        # 这里为例方便测试设置为up==1
+        ## 注意==0为报警条件，当有服务宕机测会告警，如果测试需改为1
+        expr: up{job=~"node-exporter|prometheus|grafana|alertmanager|nvidia"} == 0
+        for: 0m
+        labels:
+          severity: ERROR
+        annotations:
+          title: 'Instance down'
+          summary: "{{$labels.instance}}"
+          description: "主机: 【{{ $labels.instance }}】has been down for more than 1 minute"
+      - alert: db
+        expr: up{job=~"mysql"} == 0
+        for: 0m
+        labels:
+          severity: ERROR
+        annotations:
+          title: 'Instance down'
+          summary: "{{$labels.instance}}"
+          description: "主机: 【{{ $labels.instance }}】has been down for more than 1 minute"

@@ -1,0 +1,68 @@
+version: '3'
+
+networks:
+    monitor:
+        driver: bridge
+
+services:
+    prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        hostname: prometheus
+        restart: always
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml
+            - ./rule.yml:/etc/prometheus/rule.yml
+            - /data/prometheus:/prometheus
+        ports:
+            - "9090:9090"
+        command: "--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle --storage.tsdb.retention=90d"
+        networks:
+            - monitor
+
+    alertmanager:
+        image: prom/alertmanager
+        container_name: alertmanager
+        hostname: alertmanager
+        restart: always
+        volumes:
+            - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+            - ./email.tmpl:/etc/alertmanager/email.tmpl
+        ports:
+            - "9093:9093"
+        networks:
+            - monitor
+
+    mysql_exporter:
+        image: prom/mysqld-exporter
+        container_name: mysql_exporter
+        hostname: mysql_exporter
+        restart: always
+        volumes:
+            - ./my.cnf:/opt/my.cnf
+        command:
+            - '--collect.global_status'
+            - '--collect.global_variables'
+            - '--collect.auto_increment.columns'
+            - '--config.my-cnf=/opt/my.cnf'
+        environment:
+            DATA_SOURCE_NAME: "root:zhpoc0818@(192.168.10.140:3306)/"
+        ports:
+            - "9104:9104"
+
+    grafana:
+        image: grafana/grafana
+        container_name: grafana
+        hostname: grafana
+        restart: always
+        volumes:
+            - ./grafana/lib/grafana:/var/lib/grafana
+            - ./grafana/log/grafana:/var/log/grafana
+#            - ./grafana.ini:/usr/share/grafana/conf/defaults.ini
+#            - ./server.key:/usr/share/grafana/conf/server.key
+#            - ./server.crt:/usr/share/grafana/conf/server.crt
+        ports:
+            - "3000:3000"
+        networks:
+            - monitor
+
