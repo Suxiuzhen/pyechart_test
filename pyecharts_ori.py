@@ -1,8 +1,21 @@
 import sys
 from PyQt5 import QtWidgets, QtCore, QtWebEngineWidgets
+from PyQt5.QtCore import QSize, QObject, QTimer
+from PyQt5.QtWebChannel import QWebChannel
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWidgets import QApplication
 from pyecharts import options as opts
 from pyecharts.charts import Bar
 from pyecharts.faker import Faker
+
+
+class ChartObject(QObject):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.chart = None
+
+    def setChart(self, chart):
+        self.chart = chart
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -30,40 +43,49 @@ class MainWindow(QtWidgets.QMainWindow):
         row1_layout.addWidget(time_picker)
 
         # 第二行布局
-        row2_layout = QtWidgets.QGridLayout()
-
-        # 创建Pyecharts柱形图
-        chart1 = self.create_bar_chart()
-        chart2 = self.create_bar_chart()
-        chart3 = self.create_bar_chart()
-        chart4 = self.create_bar_chart()
-
-        # 将每个格子的HTML代码放入QWebEngineView
-        web_view1 = QtWebEngineWidgets.QWebEngineView()
-        web_view1.setHtml(chart1)
-        web_view2 = QtWebEngineWidgets.QWebEngineView()
-        web_view2.setHtml(chart2)
-        web_view3 = QtWebEngineWidgets.QWebEngineView()
-        web_view3.setHtml(chart3)
-        web_view4 = QtWebEngineWidgets.QWebEngineView()
-        web_view4.setHtml(chart4)
-
-        # 设置每个格子的位置
-        row2_layout.addWidget(web_view1, 0, 0)
-        # row2_layout.addWidget(web_view2, 0, 1)
-        # row2_layout.addWidget(web_view3, 1, 0)
-        # row2_layout.addWidget(web_view4, 1, 1)
+        self.row2_layout = QtWidgets.QGridLayout()
+        # self.create_rectangle(self.row2_layout)
 
         # 将第一行和第二行布局添加到主布局容器中
         layout.addLayout(row1_layout)
-        layout.addLayout(row2_layout)
+        layout.addLayout(self.row2_layout)
 
         # 创建一个 QWidget 作为主窗口的中心部件
         central_widget = QtWidgets.QWidget()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
-    def create_bar_chart(self):
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.create_rectangle(self.row2_layout)
+
+    def get_window_size(self):
+        # 窗口尺寸变化时，获取当前窗口的宽度和高度
+        width = self.width()
+        height = self.height()
+        print(f"Width: {width}, Height: {height}")
+
+        return width/2.3, height/2.35
+
+    def create_rectangle(self, gridLayout):
+        # 创建四个格子，每个格子使用 QWebEngineView 显示 PyEcharts 生成的柱形图
+        width, height = self.get_window_size()
+        for i in range(2):
+            for j in range(2):
+                webview = QWebEngineView()
+                gridLayout.addWidget(webview, i, j)
+
+                # 使用 QWebChannel 进行通信
+                channel = QWebChannel()
+                webview.page().setWebChannel(channel)
+
+                # 创建 PyEcharts 的柱形图实例
+
+                chart = self.create_bar_chart(width, height)
+
+                webview.setHtml(chart)
+
+    def create_bar_chart(self, cell_width=600, cell_height=400):
         bar = (
             Bar()
             .add_xaxis(Faker.choose())
@@ -74,26 +96,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 tooltip_opts=opts.TooltipOpts(
                     is_show=True, trigger="axis", axis_pointer_type="shadow"
                 ),
-                yaxis_opts=opts.AxisOpts(
-                    interval=50,
-                    max_interval=100,
-                    max_=100
-                )
-                # graphic_opts=[opts.GraphicGroup(
-                #     graphic_item=opts.GraphicItem(
-                #         left="10%", top="10%", z=100, bounding="raw", is_ignore=False
-                #     ),
-                #     children=[
-                #         opts.GraphicRect(
-                #             graphic_item=opts.GraphicItem(left="center", top="center"),
-                #             graphic_shape_opts=opts.GraphicShapeOpts(width=600, height=400),
-                #         )
-                #     ],
-                # )],
             )
             .render_embed()
         )
-
+        bar = bar.replace(
+            'style="width:900px; height:500px; "',
+            f'style="width:{cell_width}px; height:{cell_height}px; "'
+        )
         return bar
 
 
